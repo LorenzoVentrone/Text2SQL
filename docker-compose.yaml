@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  db:
+    image: mariadb:10.11
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: movies_db
+      MYSQL_USER: lorenzo
+      MYSQL_PASSWORD: pwd
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./mariadb_data:/var/lib/mysql
+      - ./mariadb_init:/docker-entrypoint-initdb.d
+
+  backend:
+    build:
+      context: ./backend
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./backend/src:/app/src
+    environment:
+      PYTHONPATH: /app/src
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: lorenzo
+      DB_PASSWORD: pwd
+      DB_NAME: movies_db
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/templates:/app/templates
+    environment:
+      BACKEND_URL: "http://backend:8000"
+      PYTHONPATH: /app/src
+      DOCKER_ENV: "true"
