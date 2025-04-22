@@ -136,15 +136,22 @@
       {% endfor %}
     {% endif %}
 
-    <!-- Schema -->
-    {% if schema %}
-      <h2>📊 Schema Database</h2>
+<!-- Schema -->
+{% if schema %}
+  <h2>📊 Schema Database</h2>
+
+  {% for table, columns in schema|groupby("table_name") %}
+    <div class="card">
+      <strong>{{ table }}</strong>
       <ul>
-        {% for entry in schema %}
-          <li><strong>{{ entry.table_name }}</strong> → {{ entry.table_column }}</li>
+        {% for entry in columns %}
+          <li>{{ entry.table_column }}</li>
         {% endfor %}
       </ul>
-    {% endif %}
+    </div>
+  {% endfor %}
+{% endif %}
+
   </div>
 </body>
 </html>
