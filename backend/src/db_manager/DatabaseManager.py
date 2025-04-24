@@ -81,9 +81,17 @@ class DatabaseManager:
             else:  # Per query come DELETE senza parametri
                 cursor.execute(query)
             self.connection.commit()
+        except mariadb.IntegrityError as e:
+            # Gestione specifica per violazione di chiave primaria
+            if "Duplicate entry" in str(e):
+                print(f"DEBUG: Violazione della chiave primaria: {e}")
+                raise HTTPException(status_code=409, detail="Violazione della chiave primaria: il record esiste già.")
+            else:
+                print(f"DEBUG: Errore di integrità del database: {e}")
+                raise HTTPException(status_code=422, detail=f"Errore di integrità del database: {e}")
         except mariadb.Error as e:
             print(f"DEBUG: Errore durante l'esecuzione della query '{query}': {e}")
-            raise
+            raise HTTPException(status_code=500, detail=f"Errore interno del database: {e}")
         finally:
             cursor.close()
 
