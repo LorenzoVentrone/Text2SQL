@@ -116,42 +116,59 @@ class DatabaseManager:
             raise ValueError("Il file 'data.tsv' non è stato trovato nella directory corrente.")
         except Exception as e:
             raise ValueError(f"Errore durante la lettura del file 'data.tsv': {e}")
+        
 
-    #Aggiunta dei registi nel db
-    def add_directors(self, addRequest: List = None, data: List =  None) -> None:
+    def add_directors(self, addRequest: List = None, data: List = None) -> None:
         """
-        Inserisce i dati nella tabella 'directors'.
+        Inserisce o aggiorna i dati nella tabella 'directors'.
 
-        :param addRequest: [Opzionale]Per la richiesta di aggiunta successiva all'inizializzazione (default None)
-        :param data: [Opzionale]Dati di inizializzazione del DB (Default None)
+        :param addRequest: [Opzionale] Per la richiesta di aggiunta successiva all'inizializzazione (default None)
+        :param data: [Opzionale] Dati di inizializzazione del DB (Default None)
         """
+        unique_directors = []
         if self.table_is_empty("directors"):
             if data is not None:
                 unique_directors = list(set((data[i][1], int(data[i][2])) for i in range(1, len(data))))
         elif addRequest is not None:
-            # Controlla se il regista esiste già
             director_name = addRequest[1]
+            director_age = int(addRequest[2])
+
+            # Verifica se il regista esiste già
             existing_director = self.execute_query(
-                "SELECT COUNT(*) FROM directors WHERE name = ?", (director_name,), return_columns=False
+                "SELECT age FROM directors WHERE name = ?", (director_name,), return_columns=False
             )
-            if existing_director[0][0] > 0:
-                return
-            unique_directors = [(addRequest[1], int(addRequest[2]))]
+
+            if existing_director:
+                current_age = existing_director[0][0]
+                # Aggiorna il regista se l'età è diversa
+                if current_age != director_age:
+                    self.execute_db_operation(
+                        "UPDATE directors SET age = ? WHERE name = ?", [(director_age, director_name)]
+                    )
+                    print(f"DEBUG: Aggiornato il regista '{director_name}' con la nuova età {director_age}.")
+                    return  # Non aggiungere un nuovo record se è stato aggiornato
+            else:
+                # Se il regista non esiste, aggiungilo
+                unique_directors = [(director_name, director_age)]
         else:
             raise ValueError("I dati per l'aggiunta non sono stati forniti.")
-        self.execute_db_operation(
-            "INSERT INTO directors (name, age) VALUES (?, ?)",
-            unique_directors
-        )
+
+        if unique_directors:
+            self.execute_db_operation(
+                "INSERT INTO directors (name, age) VALUES (?, ?)",
+                unique_directors
+            )
+            print(f"DEBUG: Aggiunto il regista '{unique_directors[0][0]}' con età {unique_directors[0][1]}.")
 
     #Aggiunta dei film nel db
     def add_movies(self, addRequest: List = None, data: List = None) -> None:
         """
-        Inserisce i dati nella tabella 'movies'.
+        Inserisce i dati nella tabella 'movies' solo se non esistono duplicati.
 
-        :param addRequest: [Opzionale]Per la richiesta di aggiunta successiva all'inizializzazione (default None)
-        :param data: [Opzionale]Dati di inizializzazione del DB (Default None)
+        :param addRequest: [Opzionale] Per la richiesta di aggiunta successiva all'inizializzazione (default None)
+        :param data: [Opzionale] Dati di inizializzazione del DB (Default None)
         """
+
         if self.table_is_empty("movies"):
             if data is not None:
                 movies_data = [
@@ -159,15 +176,48 @@ class DatabaseManager:
                     for i in range(1, len(data))
                 ]
         elif addRequest is not None:
+            # Verifica se il film esiste già
+            movie_title = addRequest[0]
+            director_name = addRequest[1]
+            movie_year = int(addRequest[3])
+            movie_genre = addRequest[4]
+            existing_movie = self.execute_query(
+                "SELECT director, year, genre FROM movies WHERE title = ?", (movie_title,), return_columns=False
+            )
+
+            if existing_movie:
+                current_director, current_year, current_genre = existing_movie[0]
+                # Controlla se i campi sono uguali
+                updates = []
+                if current_director != director_name:
+                    updates.append(f"director = '{director_name}'")
+                if current_year != movie_year:
+                    updates.append(f"year = {movie_year}")
+                if current_genre != movie_genre:
+                    updates.append(f"genre = '{movie_genre}'")
+
+                if updates:
+                    update_query = f"UPDATE movies SET {', '.join(updates)} WHERE title = ?"
+                    self.execute_db_operation(update_query, [(movie_title,)])
+                    print(f"DEBUG: Aggiornato il film '{movie_title}' con i nuovi valori: {updates}.")
+                    return #aggiornato i campi -> esce
+                else:
+                    print(f"DEBUG: Il film '{movie_title}' esiste già con gli stessi valori. Nessuna aggiunta.")
+                    return  # Non aggiungere nulla se i campi sono uguali
+
+            # Aggiungi il film solo se i campi sono diversi
             movies_data = [
-                (addRequest[0], addRequest[1], int(addRequest[3]), addRequest[4])
+                (movie_title, director_name, movie_year, movie_genre)
             ]
         else:
             raise ValueError("I dati per l'aggiunta non sono stati forniti.")
-        self.execute_db_operation(
-            "INSERT INTO movies (title, director, year, genre) VALUES (?, ?, ?, ?)",
-            movies_data
-        )
+
+        if movies_data:
+            self.execute_db_operation(
+                "INSERT INTO movies (title, director, year, genre) VALUES (?, ?, ?, ?)",
+                movies_data
+            )
+            print(f"DEBUG: Aggiunto il film '{movies_data[0][0]}' al database.")
 
     #Aggiunta di film/piattaforma nel db
     def add_platform_availability(self, addRequest: List = None, data: List = None) -> None:
@@ -196,8 +246,9 @@ class DatabaseManager:
             movie_id = self.get_movie_id(addRequest[0])
             if len(addRequest) == 6:
                 platform_data = [(movie_id, addRequest[5])]
-            else:
+            elif len(addRequest) == 7:
                 platform_data = [(movie_id, addRequest[5]), (movie_id, addRequest[6])]
+            else: return
         else:
             raise ValueError("I dati per l'aggiunta non sono stati forniti.")
         self.execute_db_operation(
@@ -222,10 +273,10 @@ class DatabaseManager:
             if isFill:
                 if len(data_values) < 5 or len(data_values)>7:
                     raise HTTPException(status_code=422, detail="Input non valido.")
-                print("DEBUG: Aggiunta dati con isFill=True")
                 self.add_directors(addRequest=data_values)
                 self.add_movies(addRequest=data_values)
                 self.add_platform_availability(addRequest=data_values)
+                print("DEBUG: Aggiunte eseguenti correttamente")
             else:
                 print("DEBUG: Aggiunta dati con isFill=False")
                 self.add_directors(data=data_values)
@@ -259,4 +310,3 @@ class DatabaseManager:
             print("DEBUG: Database ripulito con successo.")
         except mariadb.Error as e:
             raise HTTPException(status_code=500, detail=f"Database error: {e}")
-        
