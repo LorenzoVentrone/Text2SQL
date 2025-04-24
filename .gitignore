@@ -1,0 +1,10 @@
+# Ignora la cartella mariadb_data
+mariadb_data/
+
+# Ignora i file __pycache__
+__pycache__/
+**/__pycache__/
+
+# Ignora i file compilati di Python
+*.pyc
+*.pyo
