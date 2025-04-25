@@ -53,7 +53,12 @@ def add_data(request: Request, data_line: str = Form(...)) -> HTMLResponse:
         response = requests.post(f"{BASE_URL}/add", json={"data_line": data_line})
         response.raise_for_status()
         return templates.TemplateResponse("index.html", {"request": request, "success": "Dati aggiunti con successo!"})
+    except requests.exceptions.HTTPError as e:
+        # Gestione specifica per errori HTTP
+        error_message = e.response.json().get("detail", "Errore durante l'aggiunta dei dati.")
+        return templates.TemplateResponse("index.html", {"request": request, "error": error_message})
     except requests.exceptions.RequestException as e:
+        # Gestione generica per errori di connessione o altro
         return templates.TemplateResponse("index.html", {"request": request, "error": str(e)})
 
 

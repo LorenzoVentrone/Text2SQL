@@ -121,9 +121,10 @@
       <div class="message error">{{ error }}</div>
     {% endif %}
 
-    <!-- Risultati -->
-    {% if results %}
-      <h2>🔍 Risultati</h2>
+  <!-- Risultati -->
+  {% if question is defined %}
+    <h2>🔍 Risultati</h2>
+    {% if results and results|length > 0 %}
       {% for item in results %}
         <div class="card">
           <strong>{{ item.item_type }}</strong>
@@ -134,7 +135,12 @@
           </ul>
         </div>
       {% endfor %}
+    {% else %}
+      <div class="message error">Nessun risultato trovato.</div>
     {% endif %}
+  {% endif %}
+
+
 
 <!-- Schema -->
 {% if schema %}

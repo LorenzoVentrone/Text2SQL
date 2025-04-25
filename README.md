@@ -23,7 +23,7 @@ L'applicazione sarà disponibile all'indirizzo ```localhost:8001```
 
 ## ⚙️ Configurazione manuale (senza Docker)
 ### Backend
-- Naviga nella directory backend: ```cd backend```
+- Naviga nella directory backend: ```cd backend/src```
 
 - Installa le dipendenze: ```pip install -r requirements.txt```
 
@@ -32,7 +32,7 @@ L'applicazione sarà disponibile all'indirizzo ```localhost:8001```
 
 ### Frontend
 - Assicurati che il backend sia in esecuzione.
-- Naviga nella directory frontend: ```cd frontend```
+- Naviga nella directory src: ```cd frontend/src```
 - Installa le dipendenze: ```pip install -r requirements.txt```
 - Avvia il server FastAPI: ```uvicorn frontend.frontend:app --reload --port 8001```
   - Se necessario esportare il PYTHONPATH eseguendo ```PYTHONPATH=$(pwd)/src uvicorn frontend.frontend:app --reload --port 8001```

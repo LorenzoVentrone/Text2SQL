@@ -126,12 +126,14 @@ class DatabaseManager:
             raise ValueError(f"Errore durante la lettura del file 'data.tsv': {e}")
         
 
-    def add_directors(self, addRequest: List = None, data: List = None) -> None:
+    def add_directors(self, addRequest: List = None, data: List = None) -> bool:
         """
         Inserisce o aggiorna i dati nella tabella 'directors'.
 
         :param addRequest: [Opzionale] Per la richiesta di aggiunta successiva all'inizializzazione (default None)
         :param data: [Opzionale] Dati di inizializzazione del DB (Default None)
+
+        :return: True se è stato aggiunto o aggiornato almeno un elemento, False altrimenti
         """
         unique_directors = []
         if self.table_is_empty("directors"):
@@ -154,7 +156,7 @@ class DatabaseManager:
                         "UPDATE directors SET age = ? WHERE name = ?", [(director_age, director_name)]
                     )
                     print(f"DEBUG: Aggiornato il regista '{director_name}' con la nuova età {director_age}.")
-                    return  # Non aggiungere un nuovo record se è stato aggiornato
+                    return True # Non aggiungere un nuovo record se è stato aggiornato
             else:
                 # Se il regista non esiste, aggiungilo
                 unique_directors = [(director_name, director_age)]
@@ -166,15 +168,21 @@ class DatabaseManager:
                 "INSERT INTO directors (name, age) VALUES (?, ?)",
                 unique_directors
             )
-            print(f"DEBUG: Aggiunto il regista '{unique_directors[0][0]}' con età {unique_directors[0][1]}.")
+            print(f"DEBUG: Aggiunto il regista '{unique_directors[0][0]}'.")
+            return True  # Aggiunto
+
+        print("DEBUG: Nessun regista aggiunto.")
+        return False  # Nessun elemento aggiunto
 
     #Aggiunta dei film nel db
-    def add_movies(self, addRequest: List = None, data: List = None) -> None:
+    def add_movies(self, addRequest: List = None, data: List = None) -> bool:
         """
         Inserisce i dati nella tabella 'movies' solo se non esistono duplicati.
 
         :param addRequest: [Opzionale] Per la richiesta di aggiunta successiva all'inizializzazione (default None)
         :param data: [Opzionale] Dati di inizializzazione del DB (Default None)
+
+        :return: True se è stato aggiornato almeno un elemento, False altrimenti
         """
 
         if self.table_is_empty("movies"):
@@ -208,10 +216,10 @@ class DatabaseManager:
                     update_query = f"UPDATE movies SET {', '.join(updates)} WHERE title = ?"
                     self.execute_db_operation(update_query, [(movie_title,)])
                     print(f"DEBUG: Aggiornato il film '{movie_title}' con i nuovi valori: {updates}.")
-                    return #aggiornato i campi -> esce
+                    return True#aggiornato i campi -> esce
                 else:
                     print(f"DEBUG: Il film '{movie_title}' esiste già con gli stessi valori. Nessuna aggiunta.")
-                    return  # Non aggiungere nulla se i campi sono uguali
+                    return  False# Non aggiungere nulla se i campi sono uguali
 
             # Aggiungi il film solo se i campi sono diversi
             movies_data = [
@@ -225,20 +233,27 @@ class DatabaseManager:
                 "INSERT INTO movies (title, director, year, genre) VALUES (?, ?, ?, ?)",
                 movies_data
             )
-            print(f"DEBUG: Aggiunto il film '{movies_data[0][0]}' al database.")
+            print(f"DEBUG: Aggiunto il film '{movies_data[0][0]}'.")
+            return True  # Aggiunto
+
+        print("DEBUG: Nessun film aggiunto.")
+        return False  # Nessun elemento aggiunto
 
     #Aggiunta di film/piattaforma nel db
-    def add_platform_availability(self, addRequest: List = None, data: List = None) -> None:
+    def add_platform_availability(self, addRequest: List = None, data: List = None) -> bool:
         """
-        Inserisce i dati nella tabella 'platform_availability'.
+        Inserisce i dati nella tabella 'platform_availability' solo se non esistono duplicati.
 
-        :param addRequest: [Opzionale]Per la richiesta di aggiunta successiva all'inizializzazione (default None)
-        :param data: [Opzionale]Dati di inizializzazione del DB (Default None)
+        :param addRequest: [Opzionale] Per la richiesta di aggiunta successiva all'inizializzazione (default None)
+        :param data: [Opzionale] Dati di inizializzazione del DB (Default None)
 
+        :return: True se è stato aggiornato almeno un elemento, False altrimenti
         """
+        platform_data = []
+
         if self.table_is_empty("platform_availability"):
+            # Inizializzazione con dati
             if data is not None:
-                platform_data = []
                 for i in range(1, len(data)):
                     movie_id = self.get_movie_id(data[i][0])
 
@@ -249,20 +264,35 @@ class DatabaseManager:
                     # Controlla se data[i][6] esiste ed è valido
                     if len(data[i]) > 6 and data[i][6]:
                         platform_data.append((movie_id, data[i][6]))
-
         elif addRequest is not None:
+            # Aggiunta manuale
             movie_id = self.get_movie_id(addRequest[0])
-            if len(addRequest) == 6:
-                platform_data = [(movie_id, addRequest[5])]
-            elif len(addRequest) == 7:
-                platform_data = [(movie_id, addRequest[5]), (movie_id, addRequest[6])]
-            else: return
-        else:
-            raise ValueError("I dati per l'aggiunta non sono stati forniti.")
-        self.execute_db_operation(
-            "INSERT INTO platform_availability (movie_id, platform) VALUES (?, ?)",
-            platform_data
+            if len(addRequest) > 5 and addRequest[5]:
+                platform_data.append((movie_id, addRequest[5]))
+            if len(addRequest) > 6 and addRequest[6]:
+                platform_data.append((movie_id, addRequest[6]))
+
+        # Recupera le chiavi primarie esistenti
+        existing_platforms = self.execute_query(
+            "SELECT movie_id, platform FROM platform_availability", return_columns=False
         )
+
+        # Filtra i dati per evitare duplicati
+        platform_data = [
+            entry for entry in platform_data if entry not in existing_platforms
+        ]
+
+        if platform_data:
+            # Inserisci i nuovi dati
+            self.execute_db_operation(
+                "INSERT INTO platform_availability (movie_id, platform) VALUES (?, ?)",
+                platform_data
+            )
+            print(f"DEBUG: Aggiunti {len(platform_data)} nuovi record a 'platform_availability'.")
+            return True  # Aggiunto
+
+        print("DEBUG: Nessun dato aggiunto a 'platform_availability'.")
+        return False  # Nessun elemento aggiunto
 
     #Getter del movie_id dal db
     def get_movie_id(self, title: str) -> int:
@@ -277,19 +307,31 @@ class DatabaseManager:
 
     #Inizializzazione/update del database  
     def add_in_db(self, data_values: List[str], isFill: bool = True) -> None:
+        """
+        Inserimento o inizializzazione del database
+
+        :param data_values: Lista di stringhe da inserire nel database
+        :param isFill: [Opzionale] Modalità di inserimento: aggiunta/update[Default True] oppure inizializzazione[False]
+
+        """
         try:
             if isFill:
                 if len(data_values) < 5 or len(data_values)>7:
-                    raise HTTPException(status_code=422, detail="Input non valido.")
-                self.add_directors(addRequest=data_values)
-                self.add_movies(addRequest=data_values)
-                self.add_platform_availability(addRequest=data_values)
-                print("DEBUG: Aggiunte eseguenti correttamente")
+                    raise HTTPException(status_code=422, detail="Input non valido (La lunghezza dell'input deve essere < 5 o > 7).")
+                added_directors = self.add_directors(addRequest=data_values)
+                added_movies = self.add_movies(addRequest=data_values)
+                added_platform = self.add_platform_availability(addRequest=data_values)
             else:
                 print("DEBUG: Aggiunta dati con isFill=False")
-                self.add_directors(data=data_values)
-                self.add_movies(data=data_values)
-                self.add_platform_availability(data=data_values)
+                added_directors = self.add_directors(data=data_values)
+                added_movies = self.add_movies(data=data_values)
+                added_platform = self.add_platform_availability(data=data_values)
+
+            #Se non è stato aggiunto nessun elemento 
+            if not (added_directors or added_movies or added_platform):
+                print("DEBUG: nessun elemento aggiunto condizione")
+                raise HTTPException(status_code=409, detail="Campo già presente, nessun elemento aggiunto")
+
         except HTTPException as e:
             print(f"DEBUG: HTTPException catturata: {e.detail}")
             raise e
