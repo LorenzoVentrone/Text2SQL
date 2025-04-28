@@ -111,6 +111,11 @@ class DatabaseManager:
 
     #Estrazione dei dati dal file tsv
     def get_data(self) -> List[List[str]]:
+        """
+        Estrae i dati dal file .tsv, ripulisce da tutti i caratteri in eccesso e li inserisce in una lista.
+
+        :return: Restituisce una Lista contente Liste di stringhe con tutti i campi estratti dal file
+        """
             
         try:
             with open("data.tsv", "r") as file:
@@ -239,7 +244,7 @@ class DatabaseManager:
         print("DEBUG: Nessun film aggiunto.")
         return False  # Nessun elemento aggiunto
 
-    #Aggiunta di film/piattaforma nel db
+    #Aggiunta/Aggiornamento di film/piattaforma nel db
     def add_platform_availability(self, addRequest: List = None, data: List = None) -> bool:
         """
         Inserisce i dati nella tabella 'platform_availability' solo se non esistono duplicati.
@@ -264,35 +269,45 @@ class DatabaseManager:
                     # Controlla se data[i][6] esiste ed è valido
                     if len(data[i]) > 6 and data[i][6]:
                         platform_data.append((movie_id, data[i][6]))
-        elif addRequest is not None:
-            # Aggiunta manuale
+
+        elif addRequest:
             movie_id = self.get_movie_id(addRequest[0])
-            if len(addRequest) > 5 and addRequest[5]:
-                platform_data.append((movie_id, addRequest[5]))
-            if len(addRequest) > 6 and addRequest[6]:
-                platform_data.append((movie_id, addRequest[6]))
 
-        # Recupera le chiavi primarie esistenti
-        existing_platforms = self.execute_query(
-            "SELECT movie_id, platform FROM platform_availability", return_columns=False
-        )
+            # Estrai le piattaforme dall'input
+            platform1 = addRequest[5] if len(addRequest) > 5 and addRequest[5].strip() else None
+            platform2 = addRequest[6] if len(addRequest) > 6 and addRequest[6].strip() else None
 
-        # Filtra i dati per evitare duplicati
-        platform_data = [
-            entry for entry in platform_data if entry not in existing_platforms
-        ]
+            # Elimina i record esistenti se entrambe le piattaforme sono `None`
+            if not platform1 and not platform2:
+                self.execute_db_operation(
+                    "DELETE FROM platform_availability WHERE movie_id = ?", [(movie_id,)]
+                )
+                print(f"DEBUG: Eliminati i record esistenti per movie_id {movie_id}.")
+                return True #Aggiornato: eliminazione dati dal DB
 
+            # Aggiungi piattaforme valide
+            if platform1:
+                platform_data.append((movie_id, platform1))
+            if platform2:
+                platform_data.append((movie_id, platform2))
+
+        # Inserisci i nuovi dati se presenti
         if platform_data:
-            # Inserisci i nuovi dati
+            # Elimina i record esistenti per il `movie_id`
+            self.execute_db_operation(
+                "DELETE FROM platform_availability WHERE movie_id = ?", [(movie_id,)]
+            )
+            # Inserisci i nuovi record
             self.execute_db_operation(
                 "INSERT INTO platform_availability (movie_id, platform) VALUES (?, ?)",
                 platform_data
             )
-            print(f"DEBUG: Aggiunti {len(platform_data)} nuovi record a 'platform_availability'.")
-            return True  # Aggiunto
+            print(f"DEBUG: Aggiunti/Aggiornati {len(platform_data)} record in 'platform_availability'.")
+            return True
 
         print("DEBUG: Nessun dato aggiunto a 'platform_availability'.")
-        return False  # Nessun elemento aggiunto
+        return False
+    
 
     #Getter del movie_id dal db
     def get_movie_id(self, title: str) -> int:
@@ -315,12 +330,14 @@ class DatabaseManager:
 
         """
         try:
-            if isFill:
+            #Se il DB è già stato inizializzato
+            if isFill: 
                 if len(data_values) < 5 or len(data_values)>7:
                     raise HTTPException(status_code=422, detail="Input non valido (La lunghezza dell'input deve essere < 5 o > 7).")
                 added_directors = self.add_directors(addRequest=data_values)
                 added_movies = self.add_movies(addRequest=data_values)
                 added_platform = self.add_platform_availability(addRequest=data_values)
+            # Inizializzazione del DB
             else:
                 print("DEBUG: Aggiunta dati con isFill=False")
                 added_directors = self.add_directors(data=data_values)
