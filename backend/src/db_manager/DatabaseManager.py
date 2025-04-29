@@ -12,8 +12,6 @@ class DatabaseManager:
         Tenta di connettersi al database fino a 10 volte con un delay di 2 secondi tra i tentativi.
         I parametri di connessione sono letti da variabili di ambiente.
         """
-        retries = 10
-        delay = 2
 
         # Legge sempre da env; se non definito, usa i default per il locale
         db_host = os.getenv("DB_HOST", "127.0.0.1")
@@ -22,23 +20,13 @@ class DatabaseManager:
         db_password = os.getenv("DB_PASSWORD", "pwd")
         db_name = os.getenv("DB_NAME", "movies_db")
 
-        for attempt in range(1, retries+1):
-            try:
-                self.connection = mariadb.connect(
+        self.connection = mariadb.connect(
                     user=db_user,
                     password=db_password,
                     host=db_host,
                     port=db_port,
                     database=db_name
-                )
-                print(f"Connessione al DB riuscita ({db_host}:{db_port}).")
-                break
-            except mariadb.OperationalError as e:
-                print(f"Tentativo {attempt}/{retries} fallito: {e}. Riprovo in {delay}s…")
-                time.sleep(delay)
-        else:
-            raise RuntimeError(f"Impossibile connettersi al DB {db_host}:{db_port} dopo {retries} tentativi.")
-
+        )
 
 
     #Esecuzione della query
@@ -377,3 +365,14 @@ class DatabaseManager:
             print("DEBUG: Database ripulito con successo.")
         except mariadb.Error as e:
             raise HTTPException(status_code=500, detail=f"Database error: {e}")
+        
+    def is_init(self):
+        try:
+            if (self.table_is_empty("movies") and
+                self.table_is_empty("directors") and
+                self.table_is_empty("platform_availability")): return False
+            else: return True
+        except mariadb.Error as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+        

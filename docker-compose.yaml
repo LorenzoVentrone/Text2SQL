@@ -25,7 +25,8 @@ services:
       context: ./backend
     restart: always
     depends_on:
-      - db
+      db:
+       condition: service_healthy
     ports:
       - "8003:8000"
     volumes:
@@ -37,11 +38,6 @@ services:
       DB_USER: lorenzo
       DB_PASSWORD: pwd
       DB_NAME: movies_db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   frontend:
     build:
@@ -57,8 +53,3 @@ services:
       BACKEND_URL: "http://backend:8000"
       PYTHONPATH: /app/src
       DOCKER_ENV: "true"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001"]
-      interval: 10s
-      timeout: 5s
-      retries: 3

@@ -22,11 +22,12 @@ app.add_middleware(
 db_manager = DatabaseManager()
 
 # Pulizia e riempimento del DB al lancio 
-try:
-    db_manager.clear_db()
-    db_manager.add_in_db(db_manager.get_data(), isFill=False)
-except Exception as e:
-    raise RuntimeError(f"Errore inizializzazione database: {e}")
+if not db_manager.is_init():
+    try:
+        print("DEBUG: Inizializzazione DB")
+        db_manager.add_in_db(db_manager.get_data(), isFill=False)
+    except Exception as e:
+        raise RuntimeError(f"Errore inizializzazione database: {e}")
 
 #Inizializzazione del gestore delle query
 query_handler = QueryHandler()

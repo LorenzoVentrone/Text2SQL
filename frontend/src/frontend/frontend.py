@@ -40,7 +40,15 @@ def search(request: Request, question: str = Query(...)) -> HTMLResponse:
         response.raise_for_status()
         results = response.json()
         return templates.TemplateResponse("index.html", {"request": request, "results": results, "question": question})
+    except requests.exceptions.HTTPError as e:
+        # Gestione specifica per errore 422
+        if e.response.status_code == 422:
+            error_message = "La domanda inserita non è valida. Per favore, verifica e riprova."
+        else:
+            error_message = e.response.json().get("detail", "Errore durante la richiesta.")
+        return templates.TemplateResponse("index.html", {"request": request, "error": error_message})
     except requests.exceptions.RequestException as e:
+        # Gestione generica per errori di connessione o altro
         return templates.TemplateResponse("index.html", {"request": request, "error": str(e)})
 
 
