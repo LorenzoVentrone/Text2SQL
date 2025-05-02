@@ -49,13 +49,35 @@ L'applicazione sarà disponibile all'indirizzo ```localhost:8001```
 ### Esecuzione
 L'applicazione sarà disponibile all'indirizzo ```localhost:8001```
 
+## 🔍 Query supportate
 
-## 🧪 Esempi di utilizzo
-Domanda: "Elenca i film del 2020"
-Risultato: Lista dei film rilasciati nel 2020 con titolo, anno e genere.
+L'applicazione attualmente supporta le seguenti domande in linguaggio naturale:
 
-Domanda: "Quali registi hanno fatto più di un film?"
-Risultato: Elenco dei registi con più di un film diretto.
+- **"Elenca i film del \<Anno\>."**  
+  → Restituisce i film usciti nell’anno indicato.
+
+- **"Quali sono i registi presenti su \<Piattaforma\>?"**  
+  → Elenca i registi con film disponibili sulla piattaforma specificata.
+
+- **"Elenca tutti i film di \<Genere\>."**  
+  → Mostra tutti i film del genere specificato.
+
+- **"Quali film sono stati fatti da un regista di almeno \<Età\> anni?"**  
+  → Mostra i film diretti da registi con età maggiore o uguale a quella indicata.
+
+- **"Quali registi hanno fatto più di un film?"**  
+  → Restituisce i registi con almeno due film nel database.
+
+## ✍️ Formattazione per l'inserimento dati
+
+Per aggiungere una nuova riga nel database, è necessario seguire questo formato (valori separati da virgole):
+`Titolo,NomeRegista,EtàRegista,Anno,Genere,Piattaforma1[,Piattaforma2] `
+
+- I primi 5 campi sono **obbligatori**.
+- `Piattaforma1` e `Piattaforma2`sono **facoltativi**
+
+### Esempio:
+`Inception,Christopher Nolan,50,2010,Sci-Fi,Netflix,PrimeVideo`
 
 ## 🛠️ Tecnologie utilizzate
 
