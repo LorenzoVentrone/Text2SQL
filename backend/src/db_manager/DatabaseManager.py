@@ -132,8 +132,13 @@ class DatabaseManager:
         if self.table_is_empty("directors"):
             if data is not None:
                 unique_directors = list(set((data[i][1], int(data[i][2])) for i in range(1, len(data))))
+
         elif addRequest is not None:
             director_name = addRequest[1]
+
+            # Verifica che il campo regista non sia vuoto
+            if not director_name:
+                raise HTTPException(status_code=422, detail="Il campo regista non può essere vuoto")
             try:
                 director_age = int(addRequest[2])
             except ValueError:
@@ -193,6 +198,11 @@ class DatabaseManager:
         elif addRequest is not None:
             # Verifica se il film esiste già
             movie_title = addRequest[0]
+
+            # Verifica che il campo titolo non sia vuoto
+            if not movie_title:
+                raise HTTPException(status_code=422, detail="Il campo titolo non può essere vuoto")
+            
             director_name = addRequest[1]
             try:
                 movie_year = int(addRequest[3])
@@ -283,7 +293,7 @@ class DatabaseManager:
                 self.execute_db_operation(
                     "DELETE FROM platform_availability WHERE movie_id = ?", [(movie_id,)]
                 )
-                print(f"DEBUG: Eliminati i record esistenti per movie_id {movie_id}.")
+                print(f"DEBUG: Eliminati le piattaforme esistenti per movie_id {movie_id}.")
                 return True #Aggiornato: eliminazione dati dal DB
 
             # Aggiungi piattaforme valide

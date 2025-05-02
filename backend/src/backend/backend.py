@@ -49,8 +49,8 @@ class SearchResult(BaseModel):
 
 class DataInput(BaseModel):
     data_line: str
- 
-   
+
+
 # -- ENDPOINTS --
 
 #Metodo get per ottenere, seguendo il modello JSON richiesto, lo schema delle tabelle
@@ -104,6 +104,7 @@ def add_data(input_data: DataInput) -> Dict[str, str]:
     try:
         # Processa la stringa data_line e dividila in una lista di valori
         data_values = input_data.data_line.split(',')
+        data_values = [entry.title() for entry in data_values]
 
         # Aggiungi i dati al database utilizzando la funzione add_in_db
         db_manager.add_in_db(data_values)
