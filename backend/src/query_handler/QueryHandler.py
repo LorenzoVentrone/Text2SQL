@@ -12,7 +12,7 @@ class QueryHandler:
         self.db_manager = DatabaseManager()
         # Mapping tra pattern regex, tipo di item e query SQL
         self.query_mapping = {
-            r"Elenca i film del (\d{4})": ("film","SELECT title as name,year,genre FROM movies WHERE year = ?"),
+            r"Elenca i film del (\d{4})": ("film","SELECT title as name,director,year,genre FROM movies WHERE year = ?"),
             r"Quali sono i registi presenti su (.+)\?": ("director", """
                 SELECT DISTINCT d.name, d.age
                 FROM directors d
@@ -20,9 +20,9 @@ class QueryHandler:
                 JOIN platform_availability p ON m.id = p.movie_id
                 WHERE platform = ?
             """),
-            r"Elenca tutti i film di (.+).": ("film","SELECT title as name,year,genre FROM movies WHERE genre = ?"),
+            r"Elenca tutti i film di (.+).": ("film","SELECT title as name,director,year,genre FROM movies WHERE genre = ?"),
             r"Quali film sono stati fatti da un regista di almeno (\d+) anni\?": ("film","""
-                SELECT m.title as name,m.director,year
+                SELECT m.title as name,m.director,d.age
                 FROM movies m 
                 JOIN directors d ON m.director = d.name 
                 WHERE d.age >= ?

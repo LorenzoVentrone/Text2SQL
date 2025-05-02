@@ -320,6 +320,7 @@ class DatabaseManager:
         """
         result = self.execute_query("SELECT id FROM movies WHERE title = ?", (title,),return_columns=False)
         return result[0][0]
+    
 
     #Inizializzazione/update del database  
     def add_in_db(self, data_values: List[str], isFill: bool = True) -> None:
