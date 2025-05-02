@@ -21,9 +21,12 @@ BASE_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+def index(request: Request) -> HTMLResponse:
     """
     Visualizza la homepage con il form e i risultati, se presenti.
+
+    :param request: Oggetto Request di FastAPI che rappresenta la richiesta HTTP.
+    :return: La pagina HTML della homepage.
     """
     return templates.TemplateResponse("index.html", {"request": request})
 
@@ -31,7 +34,12 @@ def index(request: Request):
 @app.get("/search", response_class=HTMLResponse)
 def search(request: Request, question: str = Query(...)) -> HTMLResponse:
     """
-    Invia una domanda al backend come GET e mostra i risultati.
+    Invia una domanda al backend come GET per la ricerca nel DB e mostra i risultati.
+
+    :param request: Oggetto Request di FastAPI che rappresenta la richiesta HTTP.
+    :param question: La domanda da inviare al backend per la ricerca.
+
+    :return: La pagina HTML con i risultati della ricerca o un messaggio di errore.
     """
     try:
         # encoded_question per lettura del "?" nella question
@@ -56,6 +64,11 @@ def search(request: Request, question: str = Query(...)) -> HTMLResponse:
 def add_data(request: Request, data_line: str = Form(...)) -> HTMLResponse:
     """
     Invia una nuova riga da aggiungere al backend.
+
+    :param request: Oggetto Request di FastAPI che rappresenta la richiesta HTTP.
+    :param data_line: Dati da aggiungere al backend.
+
+    :return: La pagina HTML con un messaggio di successo o di errore.
     """
     try:
         response = requests.post(f"{BASE_URL}/add", json={"data_line": data_line})
@@ -74,6 +87,10 @@ def add_data(request: Request, data_line: str = Form(...)) -> HTMLResponse:
 def show_schema(request: Request) -> HTMLResponse:
     """
     Recupera lo schema del database (tabelle e colonne).
+
+    :param request: Oggetto Request di FastAPI che rappresenta la richiesta HTTP.
+
+    :return: La pagina HTML con un messaggio di successo o di errore.
     """
     try:
         response = requests.get(f"{BASE_URL}/schema_summary")
@@ -83,4 +100,14 @@ def show_schema(request: Request) -> HTMLResponse:
     except requests.exceptions.RequestException as e:
         return templates.TemplateResponse("index.html", {"request": request, "error": str(e)})
     
+    
+@app.get("/about", response_class=HTMLResponse)
+def about(request: Request) -> HTMLResponse:
+    """
+    Visualizza la pagina About con informazioni sull'applicazione.
+
+    :param request: Oggetto Request di FastAPI che rappresenta la richiesta HTTP.
+    :return: La pagina HTML con le informazioni sull'applicazione.
+    """
+    return templates.TemplateResponse("about.html", {"request": request})
 

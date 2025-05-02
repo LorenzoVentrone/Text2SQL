@@ -74,7 +74,7 @@ class QueryHandler:
             item = {
                 "item_type": table_name,
                 "properties": [
-                    {"property_name": col, "property_value": str(value)}  # Converte i valori in stringhe
+                    {"property_name": col, "property_value": str(value)} 
                     for col, value in zip(columns, row)
                 ]
             }

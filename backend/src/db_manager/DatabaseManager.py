@@ -134,7 +134,13 @@ class DatabaseManager:
                 unique_directors = list(set((data[i][1], int(data[i][2])) for i in range(1, len(data))))
         elif addRequest is not None:
             director_name = addRequest[1]
-            director_age = int(addRequest[2])
+            try:
+                director_age = int(addRequest[2])
+            except ValueError:
+                raise HTTPException(status_code=422, detail="L'età del regista deve essere un numero intero.")
+
+            if director_age <= 0:
+                raise HTTPException(status_code=422, detail="The Curious Case of Benjamin Button: l'età del regista deve essere > 0")
 
             # Verifica se il regista esiste già
             existing_director = self.execute_query(
@@ -188,9 +194,16 @@ class DatabaseManager:
             # Verifica se il film esiste già
             movie_title = addRequest[0]
             director_name = addRequest[1]
-            movie_year = int(addRequest[3])
+            try:
+                movie_year = int(addRequest[3])
+            except ValueError:
+                raise HTTPException(status_code=422, detail="L'anno del film deve essere un numero intero.")
+
+            if movie_year > time.localtime().tm_year:
+                raise HTTPException(status_code=422, detail="BACK TO THE FUTURE: L'anno del film deve essere minore dell'anno corrente")
+
             movie_genre = addRequest[4]
-            existing_movie = self.execute_query(
+            existing_movie = self.execute_query( 
                 "SELECT director, year, genre FROM movies WHERE title = ?", (movie_title,), return_columns=False
             )
 

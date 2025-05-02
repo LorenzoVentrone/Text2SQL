@@ -113,6 +113,11 @@
       <button type="submit">Visualizza Schema</button>
     </form>
 
+    <!-- Pulsante di Reset -->
+    <form method="get" action="/">
+      <button type="submit" style="background: #f87171; color: #fff;">Reset</button>
+    </form>
+
     <!-- Messaggi -->
     {% if success %}
       <div class="message success">{{ success }}</div>
@@ -121,42 +126,47 @@
       <div class="message error">{{ error }}</div>
     {% endif %}
 
-  <!-- Risultati -->
-  {% if question is defined %}
-    <h2>🔍 Risultati</h2>
-    {% if results and results|length > 0 %}
-      {% for item in results %}
+    <!-- Risultati -->
+    {% if question is defined %}
+      <h2>🔍 Risultati</h2>
+      {% if results and results|length > 0 %}
+        {% for item in results %}
+          <div class="card">
+            <strong>{{ item.item_type }}</strong>
+            <ul>
+              {% for prop in item.properties %}
+                <li><strong>{{ prop.property_name }}:</strong> {{ prop.property_value }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="message error">Nessun risultato trovato.</div>
+      {% endif %}
+    {% endif %}
+
+
+
+    <!-- Schema -->
+    {% if schema %}
+      <h2>📊 Schema Database</h2>
+
+      {% for table, columns in schema|groupby("table_name") %}
         <div class="card">
-          <strong>{{ item.item_type }}</strong>
+          <strong>{{ table }}</strong>
           <ul>
-            {% for prop in item.properties %}
-              <li><strong>{{ prop.property_name }}:</strong> {{ prop.property_value }}</li>
+            {% for entry in columns %}
+              <li>{{ entry.table_column }}</li>
             {% endfor %}
           </ul>
         </div>
       {% endfor %}
-    {% else %}
-      <div class="message error">Nessun risultato trovato.</div>
     {% endif %}
-  {% endif %}
 
-
-
-<!-- Schema -->
-{% if schema %}
-  <h2>📊 Schema Database</h2>
-
-  {% for table, columns in schema|groupby("table_name") %}
-    <div class="card">
-      <strong>{{ table }}</strong>
-      <ul>
-        {% for entry in columns %}
-          <li>{{ entry.table_column }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-  {% endfor %}
-{% endif %}
+    <!-- Footer -->
+    <footer style="text-align: center; margin-top: 2rem; padding: 1rem; background: #1e1e1e; color: #61dafb;">
+      <a href="/about" style="color: #61dafb; text-decoration: none; font-weight: bold;">About</a>
+    </footer>
 
   </div>
 </body>

@@ -49,7 +49,8 @@ class SearchResult(BaseModel):
 
 class DataInput(BaseModel):
     data_line: str
-    
+ 
+   
 # -- ENDPOINTS --
 
 #Metodo get per ottenere, seguendo il modello JSON richiesto, lo schema delle tabelle
