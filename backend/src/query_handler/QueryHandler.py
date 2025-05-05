@@ -60,7 +60,7 @@ class QueryHandler:
         results, columns = self.db_manager.execute_query(sql, params)
         return self.format_response(table_name, results, columns)
 
-    def format_response(self, table_name: str, results: Any, columns: List) -> List[Dict[str, Any]]:
+    def format_response(self, table_name: str, results: List[Tuple], columns: List) -> List[Dict[str, Any]]:
         """
         Formatta i risultati della query in un formato JSON compatibile con lo script di test.
 
